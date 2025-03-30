@@ -5,16 +5,18 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	_ "modernc.org/sqlite"
 )
 
 /*
-
 A SQLStore manages Documents via sqlite
-
 */
+
+// to avoid concurrency issues with background saves
+var mutex sync.Mutex
 
 var schema string = `
 	CREATE TABLE document (
@@ -104,7 +106,9 @@ func (s *SQLStore) CreateDocument(name string, text string) (int64, error) {
 		return 0, err
 	}
 	now := s.timeNow()
+	mutex.Lock()
 	result, err := stmt.Exec(false, name, text, now, now)
+	mutex.Unlock()
 	if err != nil {
 		return 0, err
 	}
@@ -120,7 +124,9 @@ func (s *SQLStore) SaveDocument(key string, text string) error {
 		return err
 	}
 	now := s.timeNow()
+	mutex.Lock()
 	_, err = stmt.Exec(text, now, key)
+	mutex.Unlock()
 	defer stmt.Close()
 	if err != nil {
 		return err
@@ -166,7 +172,9 @@ func (s *SQLStore) DeleteDocument(key string) error {
 	if err != nil {
 		return err
 	}
+	mutex.Lock()
 	_, err = stmt.Exec(key)
+	mutex.Unlock()
 	defer stmt.Close()
 	if err != nil {
 		return err
@@ -183,7 +191,9 @@ func (s *SQLStore) TrashDocument(key string) error {
 	if err != nil {
 		return err
 	}
+	mutex.Lock()
 	_, err = stmt.Exec(key)
+	mutex.Unlock()
 	defer stmt.Close()
 	if err != nil {
 		return err
@@ -200,7 +210,9 @@ func (s *SQLStore) RestoreDocument(key string) error {
 	if err != nil {
 		return err
 	}
+	mutex.Lock()
 	_, err = stmt.Exec(key)
+	mutex.Unlock()
 	defer stmt.Close()
 	if err != nil {
 		return err
@@ -217,7 +229,9 @@ func (s *SQLStore) RenameDocument(key string, newname string) error {
 		return err
 	}
 	now := s.timeNow()
+	mutex.Lock()
 	_, err = stmt.Exec(newname, now, key)
+	mutex.Unlock()
 	defer stmt.Close()
 	if err != nil {
 		return err

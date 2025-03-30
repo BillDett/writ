@@ -13,8 +13,6 @@ import (
 //////// TextWidget
 
 type TextWidget struct {
-	//window        *MainWindow
-	//view          views.View
 	*tview.Box
 
 	window *MainWindow

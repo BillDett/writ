@@ -7,7 +7,6 @@ Application
   application Run() has started.
 * Use a big modal with static text for help (key off F1 or '?' in MainWindow)
 * Make the Organizer come and go by adding/removing from the Grid with a hotkey (full screen editing)
-* Need an autosave goroutine running in the background that periodically saves the current document. The interval ought to be configurable via a config setting.
 * Need an autobackup goroutine that periodically ships the entire database to cloud storage when on wifi.
 
 

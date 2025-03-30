@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"time"
 	"writ/internal/data"
 
 	"github.com/gdamore/tcell/v2"
@@ -131,6 +132,10 @@ func NewMainWindow(s data.Store) *MainWindow {
 
 	m.SetInputCapture(m.HandleEvent)
 
+	// Start the background saver with this delay
+	// TODO: Should pick up this delay from config
+	go m.backgroundSaver(20)
+
 	m.SetRoot(m.pages, true).EnableMouse(true).EnablePaste(true).SetFocus((m.organizerwidget))
 
 	return m
@@ -249,4 +254,20 @@ func (m *MainWindow) promptIfNew() bool {
 		m.Error("Use CTRL-N to create a new Document")
 	}
 	return empty
+}
+
+// backgroundSaver should be invoked as a goroutine- it wakes up every 'delay' seconds to save the text in the editor if it's dirty.
+func (m *MainWindow) backgroundSaver(delay int) {
+	ticker := time.NewTicker(time.Duration(delay) * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			if m.textwidget.dirty {
+				m.textwidget.window.store.SaveDocument(m.textwidget.currentDocKey, m.textwidget.GetText())
+				m.textwidget.dirty = false
+				m.Draw()
+			}
+		}
+	}
 }
