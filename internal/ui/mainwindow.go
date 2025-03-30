@@ -182,28 +182,12 @@ func (m *MainWindow) HandleEvent(event *tcell.EventKey) *tcell.EventKey {
 			}
 		}
 	case tcell.KeyCtrlN:
-		m.inputField.SetLabel("New document name: ").
-			SetText("").
-			SetDoneFunc(func(key tcell.Key) {
-				switch key {
-				case tcell.KeyESC, tcell.KeyTAB:
-					m.SetFocus(m.last_focused)
-				case tcell.KeyEnter:
-					name := m.inputField.GetText()
-					if name != "" {
-						err := m.organizerwidget.NewDocument(name)
-						if err != nil {
-							m.Error(err.Error())
-						}
-						m.SetFocus(m.textwidget)
-					} else {
-						m.SetFocus(m.last_focused)
-					}
-				}
-				m.mainView.RemoveItem(m.inputField)
-			})
-		m.mainView.AddItem(m.inputField, 1, 0, 1, 5, 0, 0, false)
-		m.SetFocus(m.inputField)
+		m.CollectInput("New document name: ", m.textwidget, func(name string) {
+			err := m.organizerwidget.NewDocument(name)
+			if err != nil {
+				m.Error(err.Error())
+			}
+		})
 	}
 
 	return event
@@ -228,6 +212,30 @@ func (m *MainWindow) ShowModal(name string, text string) {
 
 func (m *MainWindow) SetLastFocused(p tview.Primitive) { m.last_focused = p }
 func (m *MainWindow) GetLastFocused() tview.Primitive  { return m.last_focused }
+
+// CollectInput prompts the user for an input string and passes is to 'handler', and then passing focus to 'delegate'.
+// If the user abandons the input with ESC/TAB, the focus goes back to the last focused primitive.
+func (m *MainWindow) CollectInput(label string, delegate tview.Primitive, handler func(response string)) {
+	m.inputField.SetLabel(label).
+		SetText("").
+		SetDoneFunc(func(key tcell.Key) {
+			switch key {
+			case tcell.KeyESC, tcell.KeyTAB:
+				m.SetFocus(m.last_focused)
+			case tcell.KeyEnter:
+				input := m.inputField.GetText()
+				if input != "" {
+					handler(input)
+					m.SetFocus(delegate)
+				} else {
+					m.SetFocus(m.last_focused)
+				}
+			}
+			m.mainView.RemoveItem(m.inputField)
+		})
+	m.mainView.AddItem(m.inputField, 1, 0, 1, 5, 0, 0, false)
+	m.SetFocus(m.inputField)
+}
 
 func (m *MainWindow) closeModal() {
 	m.pages.RemovePage("modal")

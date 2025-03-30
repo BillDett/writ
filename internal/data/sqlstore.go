@@ -103,7 +103,7 @@ func (s *SQLStore) CreateDocument(name string, text string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	now := time.Now().Format("2006-01-02T15:04:05Z")
+	now := s.timeNow()
 	result, err := stmt.Exec(false, name, text, now, now)
 	if err != nil {
 		return 0, err
@@ -119,7 +119,7 @@ func (s *SQLStore) SaveDocument(key string, text string) error {
 	if err != nil {
 		return err
 	}
-	now := time.Now().Format("2006-01-02T15:04:05Z")
+	now := s.timeNow()
 	_, err = stmt.Exec(text, now, key)
 	defer stmt.Close()
 	if err != nil {
@@ -208,18 +208,32 @@ func (s *SQLStore) RestoreDocument(key string) error {
 	return nil
 }
 
-func (s *SQLStore) RenameDocument(key string) error {
+func (s *SQLStore) RenameDocument(key string, newname string) error {
 	if s.db == nil {
 		return errors.New("Cannot rename document-  must open this SQLStore first.")
+	}
+	stmt, err := s.db.Prepare("UPDATE document SET name = ?, updated_date = ? WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	now := s.timeNow()
+	_, err = stmt.Exec(newname, now, key)
+	defer stmt.Close()
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func (s *SQLStore) DuplicateDocument(key string) error {
+func (s *SQLStore) DuplicateDocument(key string, newname string) (int64, error) {
 	if s.db == nil {
-		return errors.New("Cannot duplicate document-  must open this SQLStore first.")
+		return 0, errors.New("Cannot duplicate document-  must open this SQLStore first.")
 	}
-	return nil
+	contents, err := s.LoadDocument(key)
+	if err != nil {
+		return 0, err
+	}
+	return s.CreateDocument(newname, contents)
 }
 
 func (s *SQLStore) LastOpened() (string, error) {
@@ -248,3 +262,5 @@ func (s *SQLStore) fetchConfig(k string) (string, error) {
 }
 
 // TODO: we ought to create a saveConfig(string) method
+
+func (s *SQLStore) timeNow() string { return time.Now().Format("2006-01-02T15:04:05Z") }

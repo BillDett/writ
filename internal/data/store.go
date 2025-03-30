@@ -32,9 +32,9 @@ type Store interface {
 
 	RestoreDocument(key string) error
 
-	RenameDocument(key string) error
+	RenameDocument(key string, newname string) error
 
-	DuplicateDocument(key string) error
+	DuplicateDocument(key string, newname string) (int64, error)
 
 	LastOpened() (string, error)
 }

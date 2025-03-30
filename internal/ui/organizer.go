@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"os"
 	"writ/internal/data"
 
 	"github.com/gdamore/tcell/v2"
@@ -168,6 +169,44 @@ func (o *OrganizerWidget) InputHandler() func(event *tcell.EventKey, setFocus fu
 				o.trashmode = false
 			}
 			o.Refresh()
+		case tcell.KeyCtrlR:
+			if !o.trashmode {
+				idx := o.items.GetCurrentItem()
+				name, _ := o.items.GetItemText(idx)
+				msg := fmt.Sprintf("New name for '%s': ", name)
+				o.window.CollectInput(msg, o, func(newname string) {
+					err := o.store.RenameDocument(o.item_map[idx], newname)
+					if err != nil {
+						o.window.Error(err.Error())
+					}
+					o.Refresh()
+				})
+			}
+		case tcell.KeyCtrlD:
+			if !o.trashmode {
+				idx := o.items.GetCurrentItem()
+				name, _ := o.items.GetItemText(idx)
+				msg := fmt.Sprintf("Duplicate '%s' as: ", name)
+				o.window.CollectInput(msg, o, func(newname string) {
+					_, err := o.store.DuplicateDocument(o.item_map[idx], newname)
+					if err != nil {
+						o.window.Error(err.Error())
+					}
+					o.Refresh()
+				})
+			}
+		case tcell.KeyCtrlP:
+			if !o.trashmode {
+				idx := o.items.GetCurrentItem()
+				name, _ := o.items.GetItemText(idx)
+				msg := fmt.Sprintf("Filename to export '%s': ", name)
+				o.window.CollectInput(msg, o, func(filename string) {
+					err := o.ExportItem(idx, filename)
+					if err != nil {
+						o.window.Error(err.Error())
+					}
+				})
+			}
 		case tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyDelete:
 			name, _ := o.items.GetItemText(o.items.GetCurrentItem())
 			if o.trashmode {
@@ -210,6 +249,24 @@ func (o *OrganizerWidget) DeleteSelectedDocument() {
 	if err != nil {
 		o.window.Error(err.Error())
 	}
+}
+
+func (o *OrganizerWidget) ExportItem(idx int, filename string) error {
+	text, err := o.store.LoadDocument(o.item_map[idx])
+	if err != nil {
+		return err
+	}
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(text)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // additional draw function for Organizer that further customizes the border

@@ -17,9 +17,9 @@ Organizer
   * Restored (CTRL-Z) <DONE>
   * Fully Deleted (DEL) <DONE>
 * In Document mode documents can be:
-  * Duplicated (CTRL-D)
-  * Renamed (CTRL-R)
-  * Exported (CTRL-E) (prompt for a filename via the inputField)
+  * Duplicated (CTRL-D) <DONE>
+  * Renamed (CTRL-R) <DONE>
+  * Exported (CTRL-P) (prompt for a filename via the inputField) <DONE>
   * Filtered (CTRL-F) (using a search expression via the inputField )
     * This means we need to explore how to enable the FTS5 library in our sqlite instance and 
     refactor how we store text.

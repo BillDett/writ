@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"unicode"
 	"writ/internal/util"
 
@@ -87,7 +88,10 @@ func (t *TextWidget) ClearSelection() {
 	t.selecting = false
 }
 
-func (t *TextWidget) GetText() string   { return t.buffer.Text() }
+func (t *TextWidget) GetText() string {
+	return strings.TrimSuffix(t.buffer.Text(), bufferEnd) // Drop the last nonprinting char we use in the editor
+}
+
 func (t *TextWidget) GetDocKey() string { return t.currentDocKey }
 
 func (t *TextWidget) SetDocument(key string, name string, text string) {
@@ -102,7 +106,6 @@ func (t *TextWidget) SetText(text string) {
 	if text != "" {
 		t.buffer.InsertRunes(0, []rune(text))
 	}
-	//t.updateStats()
 }
 
 func (t *TextWidget) SetBuffer(pt *util.PieceTable) {
@@ -160,7 +163,7 @@ func (t *TextWidget) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 			}
 		case tcell.KeyCtrlS:
 			if t.dirty {
-				t.window.store.SaveDocument(t.currentDocKey, t.buffer.Text())
+				t.window.store.SaveDocument(t.currentDocKey, t.GetText())
 				t.dirty = false
 			}
 		case tcell.KeyESC:
@@ -176,7 +179,6 @@ func (t *TextWidget) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 		case tcell.KeyCtrlV:
 			t.pasteSelection()
 		}
-		//t.updateStats()
 	})
 }
 
