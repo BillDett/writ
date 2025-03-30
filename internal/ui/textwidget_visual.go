@@ -12,9 +12,7 @@ import (
 
 // Clear out the widget using absolute screen coordinates
 func (t *TextWidget) clear(screen tcell.Screen) {
-	//v := t.view
 	tx, ty, width, height := t.GetInnerRect()
-	//v.Clear()		// Is this strictly necessary?
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			screen.SetContent(x+tx, y+ty, ' ', nil, t.style)
@@ -79,11 +77,10 @@ func (t *TextWidget) drawLine(screen tcell.Screen, start int, end int, y int) {
 }
 
 // nextLine scans forward in the buffer from 'start' and returns the index of first character of next line or -1 if we are on last line of buffer
-// TODO: Bug when logical line end is a space and it's the last character in logical line- we don't actually render it.
 func (t *TextWidget) nextLine(start int) int {
 	length := len(*t.runes)
 	_, _, width, _ := t.GetInnerRect()
-	column_count := 0
+	column_count := 1
 	for p := start; p < length; p++ {
 		if (*t.runes)[p] == '\n' { // Found a newline, surely this denotes the end of a line
 			if p < length {
@@ -91,7 +88,7 @@ func (t *TextWidget) nextLine(start int) int {
 			} else {
 				return length - 1 // At end of buffer (and this takes up the whole line)
 			}
-		} else if column_count == width { // Reached the rightmost spot in the View s
+		} else if column_count == width { // Reached the rightmost spot in the InnerRect
 			if !unicode.IsSpace((*t.runes)[p]) { // Are we in the middle of a word- do we need to wordwrap?
 				k := p
 				for k > start && !unicode.IsSpace((*t.runes)[k]) { // "back up" until we find a space or the beginning of the line
@@ -102,6 +99,8 @@ func (t *TextWidget) nextLine(start int) int {
 				} else { // We hit beginning of line, no whitespace at all, just cut the line where we originally found it
 					return p
 				}
+			} else { // no need to split word, we're on a space already
+				return p
 			}
 		} else {
 			column_count += t.widthOf((*t.runes)[p])
