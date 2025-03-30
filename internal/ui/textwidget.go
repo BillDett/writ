@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"strings"
+	"unicode"
 	"writ/internal/util"
 
 	"github.com/gdamore/tcell/v2"
@@ -216,10 +216,22 @@ func (t *TextWidget) NumLines() int {
 	return len(t.lineIndex)
 }
 
-// NumWords is very simple and will count anything between whitespace characters as a "word"- this could be a lot smarter
-// TODO: This is a little buggy- not sure that -1 is correct
 func (t *TextWidget) NumWords() int {
-	return len(strings.Fields(t.buffer.Text())) - 1 // account for end of buffer nonprinting char
+	inWord := false
+	wordCount := 0
+
+	for _, r := range *t.buffer.Runes() {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			if !inWord {
+				wordCount++
+				inWord = true
+			}
+		} else {
+			inWord = false
+		}
+	}
+
+	return wordCount
 }
 
 func (t *TextWidget) IsModified() bool {
@@ -236,10 +248,3 @@ func (t *TextWidget) SetModified(state bool) { t.dirty = state }
 func (t *TextWidget) GetFilePath() string { return t.currentFilePath }
 
 func (t *TextWidget) SetFilePath(fp string) { t.currentFilePath = fp }
-
-/*
-func (t *TextWidget) updateStats() {
-	t.window.footerwidget.SetStatus(t.IsModified(), t.currentLine+1, t.NumLines(),
-		t.currentPosition+1, t.NumCharacters(), t.NumWords())
-}
-*/

@@ -25,7 +25,6 @@ Organizer
     refactor how we store text.
 
 TextWidget
-* BUG: word count isn't always correct (sometimes n-1)
 * We ought to get system-level copy/paste working- tview can help here I think
 
 
