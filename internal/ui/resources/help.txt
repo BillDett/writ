@@ -1,21 +1,20 @@
-gv (v0.5)
-TODO: Need to change all this for the word processor mode
+writ (v0.5) - A console word processor
+
+Just type- let writ handle everything else.
 
 Common Commands
-    F1 - Help Screen
+    F1 - Help Screen                        CTRL-N - New Document
     CTRL-Q - Quit
 
 Organizer Commands
-    CTRL-O - New Outline          CTRL-F - New Folder
-    CTRL-D - Delete selected
+    CTRL-E - Edit Current Document          CTRL-T - Toggle Trash Mode
+    CTRL-R - Rename Current Document        CTRL-D - Duplicate Current Document
+    CTRL-P - exPort Current Document to a text file
+    DEL - Trash Current Document (or permanently delete if already in Trash)
+    CTRL-Z - Restore Trashed Document (Trash Mode only)
 
 Editor Commands
-    HOME - Beginning of Headline  END - End of Headline
-    SHIFT-ARROWKEY - Select text within a Headline
-    CTRL-C - Copy Text/Headline   CTRL-X - Cut Text/Headline
-    CTRL-V - Paste Text/Headline  CTRL-B - Toggle Bullets
-    CTRL-L - Toggle Multi-List
-    CTRL-DEL - Delete Headline    CTRL-S - Save Outline
-    CTRL-UP - Collapse Headline   CTRL-DOWN - Expand Headline
+    Most of the usual text editor keys work. If not, then I either didn't add it yet or decided not to.
 
+Hit ESC to close...
     

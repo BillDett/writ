@@ -1,12 +1,17 @@
 package ui
 
 import (
+	_ "embed"
+	"fmt"
 	"time"
 	"writ/internal/data"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
+
+//go:embed resources/help.txt
+var helptext string
 
 // Override the global Styles fields for the colors we want
 func setStyles() {
@@ -130,6 +135,15 @@ func NewMainWindow(s data.Store) *MainWindow {
 
 	m.pages.AddPage("mainview", m.mainView, true, true)
 
+	helpflex := tview.NewFlex().SetDirection(tview.FlexRow)
+	helpbox := tview.NewTextView().
+		SetTextColor(tview.Styles.PrimaryTextColor).
+		SetWrap(true)
+	fmt.Fprint(helpbox, helptext)
+	helpflex.AddItem(helpbox, 0, 1, false)
+
+	m.pages.AddPage("help", helpflex, true, false)
+
 	m.SetInputCapture(m.HandleEvent)
 
 	// Start the background saver with this delay
@@ -174,6 +188,9 @@ func (m *MainWindow) HandleEvent(event *tcell.EventKey) *tcell.EventKey {
 		if name == "modal" {
 			// Pass along if a modal is open (it should close the modal)
 			return event
+		} else if name == "help" {
+			m.pages.SwitchToPage("mainview")
+			m.SetFocus(m.last_focused)
 		}
 	case tcell.KeyCtrlO:
 		if m.textwidget.IsModified() {
@@ -193,6 +210,9 @@ func (m *MainWindow) HandleEvent(event *tcell.EventKey) *tcell.EventKey {
 				m.Error(err.Error())
 			}
 		})
+	case tcell.KeyF1:
+		m.pages.ShowPage("help")
+		//m.SetFocus(helpbox)
 	}
 
 	return event
@@ -226,6 +246,7 @@ func (m *MainWindow) CollectInput(label string, delegate tview.Primitive, handle
 		SetDoneFunc(func(key tcell.Key) {
 			switch key {
 			case tcell.KeyESC, tcell.KeyTAB:
+				m.pages.ShowPage("mainview")
 				m.SetFocus(m.last_focused)
 			case tcell.KeyEnter:
 				input := m.inputField.GetText()
@@ -271,3 +292,29 @@ func (m *MainWindow) backgroundSaver(delay int) {
 		}
 	}
 }
+
+/*
+func (m *MainWindow) writeString(s tcell.Screen, x int, y int, text string) {
+	for c, r := range []rune(text) {
+		s.SetContent(x+c, y, r, nil, borderStyle)
+	}
+}
+
+func (m *MainWindow) showHelp(s tcell.Screen) {
+	lines := strings.Split(helptext, "\n")
+	width := 0
+	for _, l := range lines {
+		if len(l) > width {
+			width = len(l)
+		}
+	}
+	width += 4
+	height := len(lines) + 2
+	x := (screenWidth - width) / 2
+	y := (screenHeight - height) / 2
+	drawFrame(s, x, y, width, height)
+	for c, l := range lines {
+		writeString(s, x+2, y+c+1, l)
+	}
+}
+*/
