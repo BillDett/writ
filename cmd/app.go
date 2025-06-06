@@ -30,7 +30,10 @@ func main() {
 	}
 
 	app := ui.NewMainWindow(store)
-	if err := app.Init().Run(); err != nil {
+	app.Init()
+
+	if err := app.Run(); err != nil {
 		panic(err)
 	}
+
 }

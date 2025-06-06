@@ -73,6 +73,16 @@ func NewOrganizerWidget(s data.Store) *OrganizerWidget {
 	return o
 }
 
+// Work backwards from o.item_map to find the index of the given dbkey
+func (o *OrganizerWidget) reverseItemMap(dbkey string) int {
+	for k, v := range o.item_map {
+		if v == dbkey {
+			return k
+		}
+	}
+	return 0
+}
+
 func (o *OrganizerWidget) NewDocument(name string) error {
 	if o.window.textwidget.IsModified() {
 		err := o.store.SaveDocument(o.window.textwidget.GetDocKey(), o.window.textwidget.GetText())
@@ -125,26 +135,26 @@ func (o *OrganizerWidget) Focus(delegate func(p tview.Primitive)) {
 	o.Box.Focus(delegate)
 }
 
-/*
-
 // TODO: Rethink this a bit- how do we open after the event loop has started?
-//		also we need to map from the database key to the list index (our item_map is the other way)
-
 func (o *OrganizerWidget) OpenLastSeen() error {
-	var key int
+
 	k, err := o.store.LastOpened()
 	if err != nil {
 		return err
 	}
-	key, err = strconv.Atoi(k)
+
+	o.items.SetCurrentItem(o.reverseItemMap(k))
+
+	buffer, err := o.store.LoadDocument(k)
 	if err != nil {
-		return err
+		o.window.Error(err.Error())
+	} else {
+		m, _ := o.items.GetItemText(o.items.GetCurrentItem())
+		// NOTE: this obliterates whatever was already in the TextWidget...don't use this with edited text
+		o.window.TextWidget().SetDocument(k, m, buffer)
 	}
-	// TODO: Map key to the item index (don't use key below)
-	o.items.SetCurrentItem(key)
 	return nil
 }
-*/
 
 func (o *OrganizerWidget) Draw(screen tcell.Screen) {
 	o.Box.DrawForSubclass(screen, o)
@@ -226,6 +236,7 @@ func (o *OrganizerWidget) InputHandler() func(event *tcell.EventKey, setFocus fu
 				}
 				o.Refresh()
 			}
+
 		default:
 			if handler := o.items.InputHandler(); handler != nil {
 				handler(event, setFocus)

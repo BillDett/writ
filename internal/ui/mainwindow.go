@@ -152,27 +152,31 @@ func NewMainWindow(s data.Store) *MainWindow {
 
 	m.SetRoot(m.pages, true).EnableMouse(true).EnablePaste(true).SetFocus((m.organizerwidget))
 
+	// If we have some documents, let's open the last seen one
+	if m.organizerwidget.DocumentCount() > 0 {
+		err := m.organizerwidget.OpenLastSeen()
+		if err != nil {
+			m.Error(err.Error())
+		}
+	}
+
 	return m
 }
 
 func (m *MainWindow) Init() *MainWindow {
-	err := m.organizerwidget.Refresh()
-	if err != nil {
-		m.Error(err.Error())
-	}
-
-	/*
-		// TODO: This doesn't work since we're happening before the Run() event loop
-		if m.organizerwidget.DocumentCount() < 0 {
-			err := m.organizerwidget.OpenLastSeen()
-			if err != nil {
-				m.Error(err.Error())
-			}
-		}
-	*/
-
+	// If we have a new, empty database, prompt for a new document
 	m.promptIfNew()
 	return m
+}
+
+// PostStartup performs actions that need to happen after the event loop starts
+func (m *MainWindow) PostStartup() {
+	if m.organizerwidget.DocumentCount() > 0 {
+		err := m.organizerwidget.OpenLastSeen()
+		if err != nil {
+			m.Error(err.Error())
+		}
+	}
 }
 
 func (m *MainWindow) HandleEvent(event *tcell.EventKey) *tcell.EventKey {

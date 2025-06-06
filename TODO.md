@@ -3,9 +3,7 @@
 Application
 * BUG: We lose all focus on the 3 widgets sometimes- need a way to ensure one widget always has focus
 * BUG: CTRL-E will go into Editor even if no document is selected- should disallow that
-* Startup flow is a little clunky- is there a better way to 'initialize' the UI before it's usable while
-  still being able to use it (e.g. pop up error messages, etc). Need a way to 'init' the app after the 
-  application Run() has started.
+* BUG: When starting with an empty database, there is no way to clear the Error modal telling you to create a new document
 * Make the Organizer come and go by adding/removing from the Grid with a hotkey (full screen editing)
 * Need an autobackup goroutine that periodically ships the entire database to cloud storage when on wifi.
 
