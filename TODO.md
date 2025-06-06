@@ -16,6 +16,6 @@ Organizer
     refactor how we store text.
 
 TextWidget
-* We ought to get system-level copy/paste working- tview can help here I think
+* 
 
 

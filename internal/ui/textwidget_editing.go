@@ -1,5 +1,7 @@
 package ui
 
+import "github.com/atotto/clipboard"
+
 //////// TextWidget Editing
 
 func (t *TextWidget) appendRune(r rune) {
@@ -73,34 +75,53 @@ func (t *TextWidget) startSelection() {
 	// TODO: We should have a visual indicator that we're in selection mode in status bar
 }
 
-func (t *TextWidget) copySelection() {
-	// Grab all of the runes from selStart to selEnd and save to the clipboard
+func (t *TextWidget) copySelection() bool {
+	// Grab all of the runes from selStart to selEnd and save to the system clipboard
 	if t.IsSelecting() {
 		if t.selEnd != -1 { // Have we actually selected any runes?
 			size := t.selEnd - t.selStart + 1
-			t.clipboard = make([]rune, size)
+			text := make([]rune, size)
 			for c := 0; c < size; c++ {
-				t.clipboard[c] = (*t.runes)[c+t.selStart]
+				text[c] = (*t.runes)[c+t.selStart]
 			}
+			// Write to system clipboard
+			err := clipboard.WriteAll(string(text))
+			if err != nil {
+				t.window.Error("Failed to copy to clipboard: " + err.Error())
+				return false
+			}
+			return true
+		}
+	}
+	return false
+}
+
+func (t *TextWidget) cutSelection() {
+	// Only proceed with cut if copy was successful
+	if t.copySelection() {
+		if t.IsSelecting() && t.selEnd != -1 {
+			// Place where our current position ought to be following the cut
+			t.currentPosition = t.selStart
+			// Remove these runes from the buffer
+			t.buffer.Delete(t.selStart, t.selEnd-t.selStart+1)
+			t.dirty = true
 		}
 	}
 }
 
-func (t *TextWidget) cutSelection() {
-	t.copySelection()
-	if len(t.clipboard) > 0 {
-		// Place where our current position ought to be following the cut
-		t.currentPosition = t.selStart
-		// Remove these runes from the buffer
-		t.buffer.Delete(t.selStart, len(t.clipboard))
-	}
-}
-
 func (t *TextWidget) pasteSelection() {
+	// Get text from system clipboard
+	text, err := clipboard.ReadAll()
+	if err != nil {
+		t.window.Error("Failed to paste from clipboard: " + err.Error())
+		return
+	}
+
 	// Add all the runes from the clipboard at the current position
-	if len(t.clipboard) > 0 {
-		t.buffer.InsertRunes(t.currentPosition, t.clipboard)
-		t.currentPosition += len(t.clipboard)
+	if text != "" {
+		t.buffer.InsertRunes(t.currentPosition, []rune(text))
+		t.currentPosition += len(text)
+		t.dirty = true
 	}
 	// TODO: HANDLE SCROLLING- CURSOR SHOULD BE PLACED AT END OF PASTED TEXT- IF WE'RE OFF THE SCREEN
 	//    THEN WE SHOULD SCROLL TO LAST THIRD OF PAGE

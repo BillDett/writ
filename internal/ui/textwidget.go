@@ -36,8 +36,6 @@ type TextWidget struct {
 	selEnd    int // Index of selection end (or -1 if no selection)
 	selecting bool
 
-	clipboard []rune // Temporary slice of runes from the buffer (for copy/cut/paste)
-
 	currentFilePath string // Filepath to wherever the current Document has been saved to or read from
 
 	topLine     int // Which line in lineIndex is topmost in view?
