@@ -9,8 +9,10 @@ After creation, a Store must be Opened or Created before any other methods are i
 */
 
 type DocReference struct {
-	ID   int
-	Name string
+	ID          int
+	Name        string
+	CreatedDate string
+	UpdatedDate string
 }
 
 type Store interface {

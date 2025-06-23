@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"os"
+	"time"
 	"writ/internal/data"
 
 	"github.com/gdamore/tcell/v2"
@@ -33,7 +34,7 @@ type OrganizerWidget struct {
 	store     data.Store
 	window    *MainWindow
 	trashmode bool
-	item_map  map[int]string // map the List item index to the Store key
+	item_map  map[int]*data.DocReference // map the List item index to the full DocReference
 }
 
 func NewOrganizerWidget(s data.Store) *OrganizerWidget {
@@ -41,7 +42,7 @@ func NewOrganizerWidget(s data.Store) *OrganizerWidget {
 		Box:      tview.NewBox().SetBorder(true).SetTitle(" writ "),
 		items:    *tview.NewList().ShowSecondaryText(false),
 		store:    s,
-		item_map: make(map[int]string),
+		item_map: make(map[int]*data.DocReference),
 	}
 
 	o.SetDrawFunc(o.organizer_draw)
@@ -54,7 +55,7 @@ func NewOrganizerWidget(s data.Store) *OrganizerWidget {
 		// Load the text for this non-Trashed Document put into buffer
 		if !o.trashmode {
 			key := o.item_map[index]
-			buffer, err := o.store.LoadDocument(key)
+			buffer, err := o.store.LoadDocument(fmt.Sprintf("%d", key.ID))
 			if err != nil {
 				o.window.Error(err.Error())
 			} else {
@@ -65,7 +66,7 @@ func NewOrganizerWidget(s data.Store) *OrganizerWidget {
 						o.window.Error(err.Error())
 					}
 				}
-				o.window.TextWidget().SetDocument(key, mainText, buffer)
+				o.window.TextWidget().SetDocument(fmt.Sprintf("%d", key.ID), mainText, buffer)
 			}
 		}
 	})
@@ -76,7 +77,7 @@ func NewOrganizerWidget(s data.Store) *OrganizerWidget {
 // Work backwards from o.item_map to find the index of the given dbkey
 func (o *OrganizerWidget) reverseItemMap(dbkey string) int {
 	for k, v := range o.item_map {
-		if v == dbkey {
+		if fmt.Sprintf("%d", v.ID) == dbkey {
 			return k
 		}
 	}
@@ -98,7 +99,7 @@ func (o *OrganizerWidget) NewDocument(name string) error {
 	o.items.SetCurrentItem(-1)
 	docKeyStr := fmt.Sprintf("%d", id)
 	o.window.textwidget.SetDocument(docKeyStr, name, "")
-	o.item_map[o.items.GetCurrentItem()] = docKeyStr
+	o.item_map[o.items.GetCurrentItem()] = &data.DocReference{ID: int(id), Name: name}
 	return nil
 }
 
@@ -111,7 +112,7 @@ func (o *OrganizerWidget) Refresh() error {
 		o.items.Clear()
 		for _, v := range refs {
 			o.items.AddItem(v.Name, "", 0, nil)
-			o.item_map[o.items.GetItemCount()-1] = fmt.Sprintf("%d", v.ID) // AddItem() always adds to end of the list
+			o.item_map[o.items.GetItemCount()-1] = &v
 		}
 		return nil
 	}
@@ -122,7 +123,7 @@ func (o *OrganizerWidget) DocumentCount() int { return o.items.GetItemCount() }
 func (o *OrganizerWidget) CurrentDocument() (int, string) {
 	index := o.items.GetCurrentItem()
 	key := o.item_map[index]
-	return index, key
+	return index, fmt.Sprintf("%d", key.ID)
 }
 
 func (o *OrganizerWidget) SetWindow(m *MainWindow) { o.window = m }
@@ -185,7 +186,7 @@ func (o *OrganizerWidget) InputHandler() func(event *tcell.EventKey, setFocus fu
 				name, _ := o.items.GetItemText(idx)
 				msg := fmt.Sprintf("New name for '%s': ", name)
 				o.window.CollectInput(msg, o, func(newname string) {
-					err := o.store.RenameDocument(o.item_map[idx], newname)
+					err := o.store.RenameDocument(fmt.Sprintf("%d", o.item_map[idx].ID), newname)
 					if err != nil {
 						o.window.Error(err.Error())
 					}
@@ -198,7 +199,7 @@ func (o *OrganizerWidget) InputHandler() func(event *tcell.EventKey, setFocus fu
 				name, _ := o.items.GetItemText(idx)
 				msg := fmt.Sprintf("Duplicate '%s' as: ", name)
 				o.window.CollectInput(msg, o, func(newname string) {
-					_, err := o.store.DuplicateDocument(o.item_map[idx], newname)
+					_, err := o.store.DuplicateDocument(fmt.Sprintf("%d", o.item_map[idx].ID), newname)
 					if err != nil {
 						o.window.Error(err.Error())
 					}
@@ -229,7 +230,7 @@ func (o *OrganizerWidget) InputHandler() func(event *tcell.EventKey, setFocus fu
 			}
 		case tcell.KeyCtrlZ:
 			if o.trashmode {
-				key := o.item_map[o.items.GetCurrentItem()]
+				key := fmt.Sprintf("%d", o.item_map[o.items.GetCurrentItem()].ID)
 				err := o.store.RestoreDocument(key)
 				if err != nil {
 					o.window.Error(err.Error())
@@ -247,7 +248,7 @@ func (o *OrganizerWidget) InputHandler() func(event *tcell.EventKey, setFocus fu
 }
 
 func (o *OrganizerWidget) TrashSelectedDocument() {
-	key := o.item_map[o.items.GetCurrentItem()]
+	key := fmt.Sprintf("%d", o.item_map[o.items.GetCurrentItem()].ID)
 	err := o.store.TrashDocument(key)
 	if err != nil {
 		o.window.Error(err.Error())
@@ -255,7 +256,7 @@ func (o *OrganizerWidget) TrashSelectedDocument() {
 }
 
 func (o *OrganizerWidget) DeleteSelectedDocument() {
-	key := o.item_map[o.items.GetCurrentItem()]
+	key := fmt.Sprintf("%d", o.item_map[o.items.GetCurrentItem()].ID)
 	err := o.store.DeleteDocument(key)
 	if err != nil {
 		o.window.Error(err.Error())
@@ -263,7 +264,7 @@ func (o *OrganizerWidget) DeleteSelectedDocument() {
 }
 
 func (o *OrganizerWidget) ExportItem(idx int, filename string) error {
-	text, err := o.store.LoadDocument(o.item_map[idx])
+	text, err := o.store.LoadDocument(fmt.Sprintf("%d", o.item_map[idx].ID))
 	if err != nil {
 		return err
 	}
@@ -291,6 +292,24 @@ func (o *OrganizerWidget) organizer_draw(screen tcell.Screen, x, y, width, heigh
 	style := tcell.StyleDefault.
 		Background(tview.Styles.PrimitiveBackgroundColor).
 		Foreground(tview.Styles.PrimaryTextColor)
+
+	// Show updated date for selected document (left-justified)
+	if o.items.GetItemCount() > 0 {
+		currentIdx := o.items.GetCurrentItem()
+		if currentIdx >= 0 && currentIdx < len(o.item_map) {
+			if docRef, exists := o.item_map[currentIdx]; exists {
+				// Parse the ISO date string and format as MM/DD/YY
+				if parsedTime, err := time.Parse("2006-01-02T15:04:05Z", docRef.UpdatedDate); err == nil {
+					updatedMsg := fmt.Sprintf(" %s ", parsedTime.Format("01/02/06"))
+					for i, r := range updatedMsg {
+						screen.SetContent(x+1+i, bottom_border, r, nil, style)
+					}
+				}
+			}
+		}
+	}
+
+	// Show item count (right-justified)
 	tag := "item"
 	if o.items.GetItemCount() > 1 {
 		tag = "items"

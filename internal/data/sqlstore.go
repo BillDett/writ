@@ -76,7 +76,7 @@ func (s *SQLStore) ListDocuments(t bool) ([]DocReference, error) {
 	if t {
 		flag = 1
 	}
-	query := fmt.Sprintf("SELECT id, name FROM document where in_trash = %d", flag)
+	query := fmt.Sprintf("SELECT id, name, created_date, updated_date FROM document where in_trash = %d", flag)
 
 	rows, err := s.db.Query(query)
 	if err != nil {
@@ -87,11 +87,13 @@ func (s *SQLStore) ListDocuments(t bool) ([]DocReference, error) {
 	for rows.Next() {
 		var id int
 		var name string
-		err = rows.Scan(&id, &name)
+		var createdDate string
+		var updatedDate string
+		err = rows.Scan(&id, &name, &createdDate, &updatedDate)
 		if err != nil {
 			return nil, err
 		} else {
-			result = append(result, DocReference{id, name})
+			result = append(result, DocReference{id, name, createdDate, updatedDate})
 		}
 	}
 	return result, nil

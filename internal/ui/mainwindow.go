@@ -200,6 +200,11 @@ func (m *MainWindow) HandleEvent(event *tcell.EventKey) *tcell.EventKey {
 		if m.textwidget.IsModified() {
 			m.store.SaveDocument(m.textwidget.GetDocKey(), m.textwidget.GetText())
 		}
+		// Refresh the organizer to pick up any updated dates from recent saves
+		err := m.organizerwidget.Refresh()
+		if err != nil {
+			m.Error(err.Error())
+		}
 		m.SetFocus(m.organizerwidget)
 	case tcell.KeyCtrlE:
 		if !m.promptIfNew() { // don't go into editing if we don't have a document yet or are showing Trash
