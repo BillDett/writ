@@ -8,6 +8,16 @@ After creation, a Store must be Opened or Created before any other methods are i
 
 */
 
+// SortBy defines how to sort document lists
+type SortBy int
+
+const (
+	NoSort SortBy = iota
+	SortByName
+	SortByCreatedDate
+	SortByUpdatedDate
+)
+
 type DocReference struct {
 	ID          int
 	Name        string
@@ -20,7 +30,7 @@ type Store interface {
 
 	Create(filepath string) error
 
-	ListDocuments(t bool) ([]DocReference, error)
+	ListDocuments(t bool, sortBy SortBy) ([]DocReference, error)
 
 	CreateDocument(name string, text string) (int64, error)
 

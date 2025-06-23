@@ -67,7 +67,7 @@ func (s *SQLStore) Create(filepath string) error {
 
 // Return a slice of DocReferences for each Document in the Store (may return an empty list)
 // Optionally toggle whether to look in trash or not
-func (s *SQLStore) ListDocuments(t bool) ([]DocReference, error) {
+func (s *SQLStore) ListDocuments(t bool, sortBy SortBy) ([]DocReference, error) {
 	if s.db == nil {
 		return nil, errors.New("Cannot list documents- must open this SQLStore first.")
 	}
@@ -76,7 +76,21 @@ func (s *SQLStore) ListDocuments(t bool) ([]DocReference, error) {
 	if t {
 		flag = 1
 	}
+
+	// Build the base query
 	query := fmt.Sprintf("SELECT id, name, created_date, updated_date FROM document where in_trash = %d", flag)
+
+	// Add sorting if specified
+	switch sortBy {
+	case SortByName:
+		query += " ORDER BY name ASC"
+	case SortByCreatedDate:
+		query += " ORDER BY created_date DESC"
+	case SortByUpdatedDate:
+		query += " ORDER BY updated_date DESC"
+	case NoSort:
+		// No sorting - keep original order
+	}
 
 	rows, err := s.db.Query(query)
 	if err != nil {

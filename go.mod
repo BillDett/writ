@@ -9,10 +9,10 @@ require (
 	github.com/rivo/tview v0.0.0-20241227133733-17b7edb88c57
 	golang.org/x/text v0.16.0
 	modernc.org/sqlite v1.36.1
+	github.com/atotto/clipboard v0.1.4
 )
 
 require (
-	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect

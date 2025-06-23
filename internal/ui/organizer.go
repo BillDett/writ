@@ -163,7 +163,7 @@ func (o *OrganizerWidget) NewDocument(name string) error {
 }
 
 func (o *OrganizerWidget) Refresh() error {
-	refs, err := o.store.ListDocuments(o.trashmode)
+	refs, err := o.store.ListDocuments(o.trashmode, data.SortByUpdatedDate)
 	if err != nil {
 		return err
 	} else {
