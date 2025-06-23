@@ -290,40 +290,11 @@ func (m *MainWindow) promptIfNew() bool {
 func (m *MainWindow) backgroundSaver(delay int) {
 	ticker := time.NewTicker(time.Duration(delay) * time.Second)
 	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			if m.textwidget.dirty {
-				m.textwidget.window.store.SaveDocument(m.textwidget.currentDocKey, m.textwidget.GetText())
-				m.textwidget.dirty = false
-				m.Draw()
-			}
+	for range ticker.C {
+		if m.textwidget.dirty {
+			m.textwidget.window.store.SaveDocument(m.textwidget.currentDocKey, m.textwidget.GetText())
+			m.textwidget.dirty = false
+			m.Draw()
 		}
 	}
 }
-
-/*
-func (m *MainWindow) writeString(s tcell.Screen, x int, y int, text string) {
-	for c, r := range []rune(text) {
-		s.SetContent(x+c, y, r, nil, borderStyle)
-	}
-}
-
-func (m *MainWindow) showHelp(s tcell.Screen) {
-	lines := strings.Split(helptext, "\n")
-	width := 0
-	for _, l := range lines {
-		if len(l) > width {
-			width = len(l)
-		}
-	}
-	width += 4
-	height := len(lines) + 2
-	x := (screenWidth - width) / 2
-	y := (screenHeight - height) / 2
-	drawFrame(s, x, y, width, height)
-	for c, l := range lines {
-		writeString(s, x+2, y+c+1, l)
-	}
-}
-*/
